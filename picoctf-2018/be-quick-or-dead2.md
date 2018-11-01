@@ -10,7 +10,8 @@ Poll rating:
 
 As you enjoy this music even more, another executable be-quick-or-be-dead-2 shows up. Can you run this fast enough too? You can also find the executable in /problems/be-quick-or-be-dead-2_2_7e92e9cc48bad623da1c215c192bc919.
 
-Solution
+Solution:
+
 It is a easy problem but costs me about 5 hours to find the tools and get the key. :D
 
 first, I use gdb to run the program. And I use IDA pro to help me to read some functions in the program. It looks quite clear that the reason why program run so solwly is because of the recursion version of calculating fib number. So what we need to do is just skip the functions and modify the data of the register and we can get the flag immediately.
