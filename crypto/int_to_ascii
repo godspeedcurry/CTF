@@ -1,0 +1,2 @@
+py3
+bytes.fromhex(hex(flag)[2:]).decode("utf-8")
