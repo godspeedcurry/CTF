@@ -1,2 +1,6 @@
 py3
 bytes.fromhex(hex(flag)[2:]).decode("utf-8")
+
+py2 
+from pwn imort *
+unhex(hex(flag)[2:])
