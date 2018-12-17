@@ -1,0 +1,208 @@
+从受损的 git 仓库里恢复代码
+ 2015-05-24 |  tips
+背景：Windows 上的 Virtualbox 虚拟机。Ubuntu 14.04.1 LTS，3.13 内核。ext4 文件系统。
+
+作死：前几天一直在该虚拟机上开发网站，做了 N 多 commit，以为 git push 了，但事实上 push 失败了。
+
+悬疑：今天妹子 git pull 了一下，发现没有任何更新，然后说我这几天都没干活。
+
+悲剧：登录到虚拟机里一看，项目目录里有几个刚写的文件变成了 0 字节的空文件。（ext4 这么稳定，一定是母机里万恶的 NTFS 和 Virtualbox 惹的祸）
+.git 目录里好多文件也变成了 0 字节的空文件。git 提示仓库已损坏。
+
+$ git status
+error: object file .git/objects/71/cbcbbc9d06a74f2fd8ea9109b81b88086f1430 is empty
+error: object file .git/objects/71/cbcbbc9d06a74f2fd8ea9109b81b88086f1430 is empty
+fatal: loose object 71cbcbbc9d06a74f2fd8ea9109b81b88086f1430 (stored in .git/objects/71/cbcbbc9d06a74f2fd8ea9109b81b88086f1430) is corrupt
+$ git fsck
+error: object file .git/objects/00/837a7e1f8afb8da8609369f7acf95fe9b7fc5b is empty
+error: object file .git/objects/00/837a7e1f8afb8da8609369f7acf95fe9b7fc5b is empty
+fatal: loose object 00837a7e1f8afb8da8609369f7acf95fe9b7fc5b (stored in .git/objects/00/837a7e1f8afb8da8609369f7acf95fe9b7fc5b) is corrupt
+几天来写的代码是不是这样就灰飞烟灭了呢？我们知道，当你删除一个东西的时候，你只是删除了这个东西在当前三维空间中的引用，而这个东西的本体仍然存在于四维时空之中。穿越大法，走起！
+
+寻找遇难者
+首先，我们看看哪些文件在这场灾难中被 truncate（变成 0 字节）了。
+
+$ find . -size -1b
+./config/__init__.py
+./app/static/css/style.css
+./app/views/home.py
+./app/views/user.py
+./app/templates/404.html
+./app/templates/common-footer.html
+./app/templates/about.html
+./app/templates/community-rules.html
+./app/templates/settings.html
+./app/templates/copyright.html
+./app/templates/course.html
+./.git/objects/20/1588d6dac033f6c313f2bf4f0fd01c81276632
+./.git/objects/35/ea71c044277cb8ac874699ead4edfafe4a4cfa
+./.git/objects/1d/3221615759851d3ff16a65f614432c4ae857ee
+./.git/objects/1d/7a4d6633a5e5301442a0c92c349b50d8ad0e8c
+./.git/objects/2e/647f1c50f883442680962f404247d29b018b16
+./.git/objects/7c/fdee2b6ef8d2cddfd9b41bca2600e3d6fba4e0
+...（数十个 object 遇难）
+这里的 .git 目录就是 git 基于文件系统的数据库了。git 把提交进去的文件打上时间戳，按照自己的格式压缩存储进一个 key-value 数据库，既可以按照文件内容索引（git status 是怎么工作的？），又可以按照 commit 编号或者 tag 索引（git checkout 是怎么工作的？）。.git/objects 目录里长长的 SHA-1 值就是索引 key。
+
+与正常的版本库比对
+我们再去重新 git clone 一份代码，看看这些消失的 git object，在原来的版本库里是否存在。
+
+新克隆一个 git 仓库之后，惊奇地发现库里没有 SHA-1 值的 git object，只有一个大 pack 文件。
+
+.
+./index
+./info
+./info/exclude
+./branches
+./logs
+./logs/refs
+./logs/refs/remotes
+./logs/refs/remotes/origin
+./logs/refs/remotes/origin/HEAD
+./logs/refs/heads
+./logs/refs/heads/master
+./logs/HEAD
+./hooks
+./hooks/applypatch-msg.sample
+./hooks/pre-push.sample
+./hooks/pre-rebase.sample
+./hooks/pre-applypatch.sample
+./hooks/prepare-commit-msg.sample
+./hooks/post-update.sample
+./hooks/update.sample
+./hooks/pre-commit.sample
+./hooks/commit-msg.sample
+./config
+./description
+./objects
+./objects/info
+./objects/pack
+./objects/pack/pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.idx
+./objects/pack/pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.pack
+./packed-refs
+./refs
+./refs/remotes
+./refs/remotes/origin
+./refs/remotes/origin/HEAD
+./refs/heads
+./refs/heads/master
+./refs/tags
+./HEAD
+$ ls -l objects/pack/
+total 7400
+-r--r--r-- 1 vagrant vagrant   84456 May 23 14:58 pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.idx
+-r--r--r-- 1 vagrant vagrant 7491426 May 23 14:58 pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.pack
+使用 git unpack-objects 就可以把这些文件展开。注意需要把原来在 .git 目录里的 pack 文件移动出来而非复制出来，否则聪明的 git 会检测到 objects 目录里的 pack 文件已经有相同的 object，就不会展开了。
+
+$ mv .git/objects/pack/pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.pack .
+$ git unpack-objects < pack-d4da3e51cfa0c0650e2b3b663d71bb1f8ce4d825.pack
+Unpacking objects: 100% (2978/2978), done.
+这下那些长长的 SHA-1 值回来了。
+
+./.git/objects/8d
+./.git/objects/8d/16e06ef2c91ffc329868da4a124370191400e0
+./.git/objects/8d/a67cc2c2787e6eac1f3b327664f0f62fde6535
+./.git/objects/8d/1d7a4fca5bd4994c30cc0ea9c743aa67474735
+./.git/objects/8d/54da727431e0560228f8f240082ec58e39fed8
+./.git/objects/4f
+./.git/objects/4f/1c8299469a493380b25765c464e33141a95fe6
+./.git/objects/4f/ef67cbe5a6c70327a63a309d0e8b780a2b278c
+...
+现在我们可以回到受损的版本库里，比较受损版本库与上游版本库的区别：
+
+$ find . -size -1b -exec ls ../newrepo/{} \;
+...
+../newrepo/./.git/objects/20/1588d6dac033f6c313f2bf4f0fd01c81276632
+../newrepo/./.git/objects/35/ea71c044277cb8ac874699ead4edfafe4a4cfa
+../newrepo/./.git/objects/1d/3221615759851d3ff16a65f614432c4ae857ee
+../newrepo/./.git/objects/1d/7a4d6633a5e5301442a0c92c349b50d8ad0e8c
+../newrepo/./.git/objects/2e/647f1c50f883442680962f404247d29b018b16
+ls: cannot access ../newrepo/./.git/objects/7c/fdee2b6ef8d2cddfd9b41bca2600e3d6fba4e0: No such file or directory
+ls: cannot access ../newrepo/./.git/objects/00/837a7e1f8afb8da8609369f7acf95fe9b7fc5b: No such file or directory
+ls: cannot access ../newrepo/./.git/objects/78/2ed6614f481f77b358aeb5955439292b551a2c: No such file or directory
+...
+这些 No such file or directory 的，就是上游仓库并不存在的 git object，也就是上次 push 后新提交（add 或 commit）进仓库的内容。除非使用文件系统级的恢复技术，这些 git object 是很难再找回来了。
+
+从 git 数据库里提取文件
+一个已经被 commit 或 add 到 git 仓库里的文件，在工作目录里有一份拷贝，在 git 数据库（.git 目录）里有另一份拷贝。只要两份拷贝里有一份是可以用的，数据就仍然能找回来。我们主要关心的是，工作目录里那些已经丢失的文件，能否从 git 数据库的拷贝里发现。
+
+首先尝试打开一个 git object，发现是乱码。file 一下，发现也很乱。
+
+$ file .git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a
+.git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a: VAX COFF executable not stripped
+RTFM 总是有用的。Git Object 格式 告诉我们，git object 是把文件内容做了 deflate 压缩后存储的。我们知道 gzip 也是用的 zlib 的 deflate 压缩，不过 gz 文件有特殊的头尾。与其写一段代码调用 gzip 库，不如把 gzip 的文件头给补上，直接调用 gunzip 来解压。（我怎么知道的？浏览器返回的 HTTP 请求经常也是 deflate 压缩啊，从抓包记录里解压这个是必备技能啊）
+
+$ printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - .git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a | gunzip | head -n 5
+
+gzip: stdin: unexpected end of file
+blob 1176{% extends "layout.html" %}
+{% block content %}
+
+
+  
+
+我们看到了明文！且慢，gzip: stdin: unexpected end of file 是什么？难道是文件损坏了？非也，gz 文件末尾有 8 个字节来存储 CRC32 和解压后的文件大小用作校验，我们没补上这些信息。只要文件内容出来了就行。
+
+如何检查文件是完整的呢？git object 的文件头写明了原始文件的大小。hexdump 可以看到，解压之后的文件里，第一个字符串代表 git object 类型，这里的 blob 表示是文件存储；第二个十进制整数表示原始文件的大小；然后一个 \0 表示文件头结束，后面就是原始文件内容了。
+
+$ printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - .git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a | gunzip | hexdump -C | head
+
+gzip: stdin: unexpected end of file
+00000000  62 6c 6f 62 20 31 31 37  36 00 7b 25 20 65 78 74  |blob 1176.{% ext|
+00000010  65 6e 64 73 20 22 6c 61  79 6f 75 74 2e 68 74 6d  |ends "layout.htm|
+00000020  6c 22 20 25 7d 0a 7b 25  20 62 6c 6f 63 6b 20 63  |l" %}.{% block c|
+00000030  6f 6e 74 65 6e 74 20 25  7d 0a 0a 3c 64 69 76 20  |ontent %}..
+.  
+...    
+.      
+文件头 10 个字节，加上文件内容 1176 字节，恰好是解压后的文件大小 1186 字节，说明解压后的文件并不缺少东西。
+
+$ printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - .git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a | gunzip | wc        
+gzip: stdin: unexpected end of file
+     42      81    1186
+如果我们希望去掉那个讨厌的 git object 文件头，可以用 sed 把第一个 \0 及之前的内容去掉：
+
+$ printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - .git/objects/4f/1f12f7a41593de4fc4131df05fb05e517e717a | gunzip 2>/dev/null | sed -z 1d | head -n 5
+{% extends "layout.html" %}
+{% block content %}
+
+
+  
+
+然后我们就可以把受损的 git 库里的 git objects 全部解压到 recovery 目录，能解压多少算多少。
+
+$ mkdir -p ../recovery
+$ find .git/objects/ | while read f; do
+    printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - $f 
+      | gunzip 2>/dev/null
+      | sed -z 1d 
+      > ../recovery/$(echo $f | cut -s -d/ -f3,4 --output-delimiter="")
+      2>/dev/null;
+done
+得到的 recovery 目录就会像这样：
+
+$ ls -l ../recovery/ |head -n 5
+total 33584
+-rw-rw-r-- 1 vagrant vagrant       0 May 23 18:03 00
+-rw-rw-r-- 1 vagrant vagrant     241 May 23 18:03 0008584b7db75782df11f35983b59a94e89fa201
+-rw-rw-r-- 1 vagrant vagrant    9867 May 23 18:03 000bb86306810c5b7f020313b1db2c559d47d7d9
+-rw-rw-r-- 1 vagrant vagrant     241 May 23 18:03 000ea7ccc6842e84bb1caa4fbb2010b5a28eb32b
+从代码里大海捞针
+到了这一步，熟悉文件系统恢复的同学一定有似曾相识的感觉。当文件系统的目录树损坏，只能根据 inode 的 magic number 找到散落在磁盘上的文件时，我们丢失了文件的路径信息和元数据，连文件名是什么都不知道（因为它存储在目录里），只能看到文件内容。诚然，我们可以扫描所有零散的文件，试图重建一部分目录树，但对目前这个恢复为数不多的几个代码文件的需求来说，是杀鸡用牛刀了。
+
+回忆新写的代码中一些 unique 的片段，再从这些解压得到的文件中 grep，就有一定的可能找到被文件系统吞噬的代码。
+
+$ grep 'review-comment-' -r ../recovery/
+../recovery/81011e32805a9d2978cd0127bcc8974b1e17f935:            [ {{ review.comment_count }}](javascript: show_review_comments({{ review.id }}))
+../recovery/81011e32805a9d2978cd0127bcc8974b1e17f935:       $('#review-comment-count-' + review_id).parent().find('span.glyphicon').addClass('grey');
+../recovery/81011e32805a9d2978cd0127bcc8974b1e17f935:       $('#review-comment-count-' + review_id).parent().find('span.glyphicon').removeClass('blue');
+../recovery/81011e32805a9d2978cd0127bcc8974b1e17f935:       $('#review-comment-count-' + review_id).parent().find('span.glyphicon').addClass('blue');
+../recovery/81011e32805a9d2978cd0127bcc8974b1e17f935:       $('#review-comment-count-' + review_id).parent().find('span.glyphicon').removeClass('grey');
+万幸的是，新写的这几个文件在 git 数据库里的 object 都还在。
+
+结语
+代码恢复了，PM 妹子自然很高兴。我打开尘封近半年的博客，写下了这篇总结。
+
+两个教训：
+
+代码一定要勤 commit & push，这样团队里其他成员也能及时知晓自己的进展，不至于被指责没干活。
+不管这桩坏事是 Virtualbox 还是 ext4 干的，或者是某个神秘黑客的恶作剧，都不能太相信虚拟机里文件系统的稳定性。
