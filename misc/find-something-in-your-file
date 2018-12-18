@@ -2,3 +2,6 @@ strings  .  | grep -rn "GIT"
 -r recursive
 -n list the line number
 
+
+find . -name "*" | xargs grep "GIT" -rn --color=auto
+
