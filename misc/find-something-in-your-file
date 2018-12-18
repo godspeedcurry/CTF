@@ -1,0 +1,4 @@
+strings  .  | grep -rn "GIT"
+-r recursive
+-n list the line number
+
