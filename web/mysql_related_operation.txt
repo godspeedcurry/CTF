@@ -1,0 +1,3 @@
+ --创建了一个名为：test 密码为：1234 的用户
+ create user 'test'@'localhost' identified by '1234';
+ GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
