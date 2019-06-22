@@ -1,3 +1,11 @@
+sudo apt-get install python-software-properties
+sudo add-apt-repository ppa:ondrej/php
+sudo apt-get update
+sudo apt-get install -y php5
+apt-get install php5.6
+apt-get install php5.6-mysql
+
+ 
  --创建了一个名为：test 密码为：1234 的用户
  create user 'test'@'localhost' identified by '1234';
  GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
