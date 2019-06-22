@@ -1,3 +1,34 @@
  --创建了一个名为：test 密码为：1234 的用户
  create user 'test'@'localhost' identified by '1234';
  GRANT ALL PRIVILEGES ON *.* TO 'test'@'localhost';
+
+
+create table user(
+   id INT NOT NULL AUTO_INCREMENT,
+   username VARCHAR(100) NOT NULL,
+   password VARCHAR(40) NOT NULL,
+   PRIMARY KEY ( id )
+);
+
+数据库连接
+<?php
+$dbhost="localhost";
+$dbname='test';
+$dbuser='username';
+$dbpass='password';
+$mysqli=mysqli_connect($dbhost,$dbuser,$dbpass,$dbname);
+var_dump('aaa');
+if (mysqli_connect_errno()){
+    echo mysql_conn_error();
+}
+?>
+数据库操作
+include("conn.php");
+
+$sql="SELECT * FROM user where username = '".$username."' and password = '".$passwd."'";
+    #echo $sql."<br><br>";
+    $result=$mysqli->query($sql);
+    $row = $result->fetch_array();
+    $auth=($row['username']);
+    $pass=($row['password']);
+
