@@ -41,3 +41,6 @@ $sql="SELECT * FROM user where username = '".$username."' and password = '".$pas
     $pass=($row['password']);
 
 insert into courses (name,submission_date) values("数学",NOW());
+
+load_file 为NULL
+https://blog.csdn.net/cleanarea/article/details/85596940
