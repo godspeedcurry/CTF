@@ -44,3 +44,7 @@ insert into courses (name,submission_date) values("数学",NOW());
 
 load_file 为NULL
 https://blog.csdn.net/cleanarea/article/details/85596940
+
+找不到mysqld
+$/usr/bin/mysql_install_db     //重建授权表
+$/usr/bin/mysqld_safe
