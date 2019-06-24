@@ -48,3 +48,7 @@ https://blog.csdn.net/cleanarea/article/details/85596940
 找不到mysqld.sock 文件目录先建好 运行以下这些文件
 $/usr/bin/mysql_install_db     //重建授权表
 $/usr/bin/mysqld_safe
+
+
+load_file
+select @@secure_file_priv;
