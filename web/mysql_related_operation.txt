@@ -52,3 +52,6 @@ $/usr/bin/mysqld_safe
 
 load_file
 select @@secure_file_priv;
+vi /etc/mysql/mysql.conf.d/mysqld.cnf
+加一行secure_file_priv = 
+
