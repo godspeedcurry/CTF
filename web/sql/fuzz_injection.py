@@ -10,7 +10,7 @@ mysql_function_list = [
 	'select','delete','insert','update','group','where',
 	'updatexml','EXTRACTVALUE',# related to error based injection
 	'sleep', #time based injection
-	'SYSDATE', 'CONV', 'FORMAT', 'MID', 'SUBSTR', 'CURRENT_DATE', 'EXP', 'LPAD', 'TIMEDIFF', 'LOG2', 'LAST_INSERT_ID', 'POWER', 'ADDDATE',
+	'SYSDATE', 'CONV', 'FORMAT', 'MID', 'SUBSTR', 'CURRENT_DATE', 'EXP', 'LPAD', 'LIKE','RLIKE','TIMEDIFF', 'LOG2', 'LAST_INSERT_ID', 'POWER', 'ADDDATE',
 	'MIN', 'LCASE', 'CONVERT', 'LAST_DAY', 'TAN', 'WEEK', 'ATAN', 'FLOOR', 'IFNULL', 'RADIANS', 'LEAST', 'SIGN', 'VERSION', 'YEAR',
 	'MINUTE', 'DAYOFWEEK', 'YEARWEEK', 'MAX', 'CURTIME', 'MONTH', 'ASIN', 'ASCII', 'REVERSE', 'TRUNCATE', 'CURRENT_TIMESTAMP', 'SUBDATE', 
 	'CURRENT_USER', 'RAND', 'ROUND', 'UPPER', 'COALESCE', 'GREATEST', 'POSITION', 'ACOS', 'PI', 'COUNT', 'REPEAT', 'WEEKOFYEAR', 'DAYOFYEAR', 
